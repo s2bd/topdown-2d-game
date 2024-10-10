@@ -109,6 +109,7 @@ public class Menu extends JPanel {
         helpText.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         helpText.setText("<html>"
+        + "<center><font color='#cfcfcf'>v0.1.4</font></center>"
         + "<style>a { text-decoration: none; color: #aaabbd }</style>"
         + "<div style='padding: 10px; color: white;'>CONTROLS</div>"
         + "<div style='padding-left: 10px; color: #aaaaaa;'>"
@@ -120,6 +121,7 @@ public class Menu extends JPanel {
         + "Based on people I met in a real Discord server<br>"
         + "Developed by <font color='#ff0a45'>Dewan Mukto</font> (<a href='https://x.com/dewan_mukto'>@dewan_mukto</a>)<br>"
         + "Character sprites by <font color='#ff0a45'>Glitched Velocity</font> (<a href='https://x.com/VazahatJordan'>@VazahatJordan</a>)<br>"
+        + "All other images are generated using fractals and math!<br>"
         + "Published by <font color='#ff0a45'>Muxday</font>"
         + "</div>"
         + "</html>");
