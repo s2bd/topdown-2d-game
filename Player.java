@@ -10,10 +10,12 @@ import java.awt.Graphics;
  */
 public class Player extends Character {
     private boolean up, down, left, right;
+    public boolean isInteracting = false;
 
     public Player(int x, int y, BufferedImage spritesheet) {
         super(x, y, spritesheet);
         this.direction = "SOUTH";
+        this.isInteracting = isInteracting;
     }
 
     @Override
