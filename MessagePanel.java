@@ -27,8 +27,10 @@ public class MessagePanel extends JPanel implements MouseListener
     private Timer typingTimer;
     private List<String> choices;
     private List<Rectangle> choiceBounds;
+    private Game game;
     
-    public MessagePanel(NPC npc, DialogueNode node){
+    public MessagePanel(Game game, NPC npc, DialogueNode node){
+        this.game = game;
         this.currentNPC = npc;
         this.currentNode = node;
         this.currentMessage = node.getDialogue();
@@ -46,6 +48,8 @@ public class MessagePanel extends JPanel implements MouseListener
                 } else {
                     typingTimer.stop();
                     typingComplete = true;
+                    choices = currentNode.getChoices();
+                    repaint();
                 }
                 repaint();
             }
@@ -56,38 +60,47 @@ public class MessagePanel extends JPanel implements MouseListener
     public void showMessage(String message, List<String> choices){
         currentMessage = message;
         currentCharIndex = 0;
+        typingComplete = false;
         this.choices = choices;
+        typingTimer.start();
     }
     
     public void updateNode(DialogueNode node){
-        // Reset typing effect and display new message and choices
+        currentNode = node;
+        if(!typingComplete){
+            typingTimer.stop();
+            currentCharIndex = 0;
+        }
+        if(currentNode.getDialogue()=="Oh, nice to meet ya, Murkot! Hope ya have a pleasant stay here."){
+            game.spawnOtherNPCs();
+        }
+        if(currentNode.getChoices().contains("")){
+            while(!typingComplete){
+                game.endDialogue(currentNPC, this);
+            }
+        }
+        showMessage(node.getDialogue(), node.getChoices());
     }
     
     private void handleChoice(String selectedChoice){
         DialogueNode nextNode = currentNode.getNextNode(selectedChoice);
-        if (nextNode != null) {
-            updateNode(nextNode);
-        } else {
-            endDialogue(); // End dialogue if no more nodes exist
+        if(nextNode != null) {
+            updateNode(nextNode); // goto next node after selecting a choice
+        }else {
+            game.endDialogue(currentNPC, this); // End dialogue if no more nodes exist
         }
     }
-    
-    private void endDialogue() {
-        currentNPC.setInteracting(false);
-        remove(this); // Remove the message panel
-        revalidate();
-        repaint();
-    }
 
-    
     // render the visual novel message panel
     @Override
     protected void paintComponent(Graphics g){
         super.paintComponent(g);
         g.setColor(Color.WHITE);
-        g.drawString(currentMessage.substring(0, currentCharIndex), 10, 20);
+        if(currentMessage != null){
+          g.drawString(currentMessage.substring(0, currentCharIndex), 10, 20);  
+        }
         // draw choices (if any)
-        if (choices != null) {
+        if(typingComplete && choices != null && !choices.isEmpty()) {
             choiceBounds.clear();
             for (int index = 0; index < choices.size(); index++) {
                 String choice = choices.get(index);
@@ -111,16 +124,14 @@ public class MessagePanel extends JPanel implements MouseListener
             }
         }
     }
-    
+
+    // useless (excess) overrides 'cause of implementing MouseListener
     @Override
     public void mousePressed(MouseEvent e) {}
-    
     @Override
     public void mouseReleased(MouseEvent e) {}
-    
     @Override
     public void mouseEntered(MouseEvent e) {}
-    
     @Override
     public void mouseExited(MouseEvent e) {}
 }
