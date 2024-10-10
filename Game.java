@@ -37,6 +37,7 @@ public class Game extends JPanel implements ActionListener, KeyListener
     private boolean showInteraction = false;
     private double closestDistance = Double.MAX_VALUE;
     private MessagePanel messagePanel;
+    private DialogueNode lenrNode1, lenrNode2, lenrNode3, lenrNode4;
     
     public Game()
     {
@@ -72,34 +73,42 @@ public class Game extends JPanel implements ActionListener, KeyListener
         timer.start();
     }
     
+    /**
+     * Renders all graphical elements in the playable area
+     *
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         player.draw(g);
-        showInteraction = false;
-        currentNPC = null;
-        
-        for(NPC npc : npcs) {
-            npc.draw(g);
-            if (isPlayerNearNPC(npc)) {
-                double distance = getDistance(player.getX(), player.getY(), npc.getX(), npc.getY());
-                if(distance < closestDistance){
-                    closestDistance = distance;
-                    showInteraction = true;
-                    currentNPC = npc;
+        if(!player.isInteracting){
+            showInteraction = false;
+            currentNPC = null;
+            closestDistance = Double.MAX_VALUE;
+            for(NPC npc : npcs) {
+                npc.draw(g);
+                if (isPlayerNearNPC(npc)) {
+                    double distance = getDistance(player.getX(), player.getY(), npc.getX(), npc.getY());
+                    if(distance < closestDistance){
+                        closestDistance = distance;
+                        showInteraction = true;
+                        currentNPC = npc;
+                    }
+                    npc.showSpeechBubble();
+                } else {
+                    npc.hideSpeechBubble();
                 }
-                npc.showSpeechBubble();
-            } else {
-                npc.hideSpeechBubble();
             }
+        } else if (currentNPC != null) {
+            currentNPC.draw(g);
         }
         
         if (showInteraction) {
             // Draw 'E' interaction circle
             g.setColor(Color.BLUE);
-            g.fillOval(player.getX() - 20, player.getY() - 20, 40, 40);
+            g.fillOval(player.getX(), player.getY() - 20, 40, 40);
             g.setColor(Color.WHITE);
-            g.drawString("E", player.getX() - 5, player.getY() + 5);
+            g.drawString("E", player.getX() + 17, player.getY() + 5);
         }
         // Top-left screen overlay text
         g.setColor(Color.GRAY);
@@ -133,25 +142,31 @@ public class Game extends JPanel implements ActionListener, KeyListener
         dialogueTrees.put("Lenr", lenrNode1);
     }
     
-    private DialogueNode currentDialogueNode;
+    private DialogueNode currentDialogueNode = lenrNode1;
     /**
      * Begins verbal interaction with NPCs
      *
      * @param npc the current NPC the player is talking to
      */
     private void startDialogue(NPC npc){
-        messagePanel = new MessagePanel(currentNPC, currentDialogueNode);
         currentDialogueNode = dialogueTrees.get(npc.getName());
-        showDialogueNode(currentDialogueNode);
-        npc.setInteracting(true);
-    }
-    
-    public void handleChoice(NPC npc, String selectedChoice){
-        // proceed to next nodes or quit dialogue interaction
+        if(currentDialogueNode != null){
+            showDialogueNode(currentDialogueNode);
+            messagePanel = new MessagePanel(currentNPC, currentDialogueNode);
+            add(messagePanel);
+            revalidate();
+            repaint();
+            npc.setInteracting(true);
+            player.isInteracting = true;
+        } else {
+            System.out.println("Dialogue not found for NPC: " + npc.getName());
+        }
     }
     
     private void showDialogueNode(DialogueNode node){
-        // idk
+        if(messagePanel != null){
+            messagePanel.updateNode(node);
+        }
     }
     
     private void proceedDialogue(DialogueNode nextNode){
@@ -169,6 +184,7 @@ public class Game extends JPanel implements ActionListener, KeyListener
         dialoguePanel = null;
         revalidate();
         repaint();
+        player.isInteracting = false;
     }
     
     private void spawnOtherNPCs(){
