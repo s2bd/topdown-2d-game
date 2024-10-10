@@ -43,6 +43,8 @@ public abstract class Character {
         // Actual rendering of the frame on-screen
         if (spriteX + FRAME_WIDTH <= spritesheet.getWidth() && spriteY + FRAME_HEIGHT <= spritesheet.getHeight()) {
             g.drawImage(spritesheet.getSubimage(spriteX, spriteY, FRAME_WIDTH, FRAME_HEIGHT), x, y, null);
+        } else {
+            frame = 0;
         }
     }
 
@@ -56,5 +58,18 @@ public abstract class Character {
         if (x > width - 78) x = width - 78;
         if (y < 0) y = 0;
         if (y > height - 108) y = height - 108;
+    }
+    
+    public int getX(){ 
+        return x;
+    }
+    public int getY(){ 
+        return y;
+    }
+    public int getWidth(){
+        return FRAME_WIDTH;
+    }
+    public int getHeight(){
+        return FRAME_HEIGHT;
     }
 }
