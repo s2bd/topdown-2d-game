@@ -22,30 +22,32 @@ public class MessagePanel extends JPanel implements MouseListener
     private String currentMessage;
     private NPC currentNPC;
     private DialogueNode currentNode;
-    private int currentCharIndex; // text character index
+    private int currentCharIndex = 0; // text character index
     private boolean typingComplete = false;
     private Timer typingTimer;
     private List<String> choices;
     private List<Rectangle> choiceBounds;
     
     public MessagePanel(NPC npc, DialogueNode node){
-        addMouseListener(this);
-        currentNPC = npc;
-        currentNode = node;
-        this.currentMessage = "";
-        this.choices = choices;
+        this.currentNPC = npc;
+        this.currentNode = node;
+        this.currentMessage = node.getDialogue();
+        this.choices = node.getChoices();
         choiceBounds = new ArrayList<>();
+        
+        setBackground(new Color(0,0,0,200)); // semi-transparent
+        addMouseListener(this);
         
         typingTimer = new Timer(50, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent a){
                 if(currentMessage != null && currentCharIndex < currentMessage.length()){
                     currentCharIndex++;
-                    repaint();
                 } else {
                     typingTimer.stop();
                     typingComplete = true;
                 }
+                repaint();
             }
         });
         typingTimer.start();
@@ -61,36 +63,49 @@ public class MessagePanel extends JPanel implements MouseListener
         // Reset typing effect and display new message and choices
     }
     
+    private void handleChoice(String selectedChoice){
+        DialogueNode nextNode = currentNode.getNextNode(selectedChoice);
+        if (nextNode != null) {
+            updateNode(nextNode);
+        } else {
+            endDialogue(); // End dialogue if no more nodes exist
+        }
+    }
+    
+    private void endDialogue() {
+        currentNPC.setInteracting(false);
+        remove(this); // Remove the message panel
+        revalidate();
+        repaint();
+    }
+
+    
     // render the visual novel message panel
-    public void paintComponent(Graphics g){
+    @Override
+    protected void paintComponent(Graphics g){
         super.paintComponent(g);
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(0, getHeight() - 200, getWidth(), 200);
         g.setColor(Color.WHITE);
-        g.drawString(currentMessage.substring(0, currentCharIndex), 50, getHeight() - 150);
+        g.drawString(currentMessage.substring(0, currentCharIndex), 10, 20);
         // draw choices (if any)
         if (choices != null) {
             choiceBounds.clear();
             for (int index = 0; index < choices.size(); index++) {
                 String choice = choices.get(index);
-                int x = 50;
-                int y = getHeight() - 100 + (index * 30);
-                g.drawString(choice, x, y);
-                Rectangle bounds = new Rectangle(x, y - 15, g.getFontMetrics().stringWidth(choice), 20);
-                choiceBounds.add(bounds);
+                Rectangle choiceRectangle = new Rectangle(10, 40 + index * 30, 200, 25);
+                choiceBounds.add(choiceRectangle);
+                g.drawRect(choiceRectangle.x, choiceRectangle.y, choiceRectangle.width, choiceRectangle.height);
+                g.drawString(choice, choiceRectangle.x + 5, choiceRectangle.y + 20);
             }
         }
     }
     
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (choices != null) {
-            for (int i = 0; i < choiceBounds.size(); i++) {
-                if (choiceBounds.get(i).contains(e.getPoint())) {
-                    String selectedChoice = choices.get(i);
-                    // Notify the Game class of the selected choice
-                    DialogueNode nextNode = currentNode.getNextNodes().get(i);
-                    ((Game) getParent()).handleChoice(currentNPC, selectedChoice);
+        if(typingComplete){
+            for(int index = 0; index < choiceBounds.size(); index++){
+                if(choiceBounds.get(index).contains(e.getPoint())){
+                    String selectedChoice = choices.get(index);
+                    handleChoice(selectedChoice);
                     break;
                 }
             }
@@ -108,14 +123,4 @@ public class MessagePanel extends JPanel implements MouseListener
     
     @Override
     public void mouseExited(MouseEvent e) {}
-    
-    public void actionPerformed(ActionEvent e){
-        if (currentCharIndex < currentMessage.length()) {
-            currentCharIndex++;
-            repaint();
-        } else {
-            typingTimer.stop();
-            typingComplete = true;
-        }
-    }
 }
